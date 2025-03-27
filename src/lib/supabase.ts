@@ -15,7 +15,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     params: {
       eventsPerSecond: 10,
     },
-    timeout: 30000,
+    timeout: 60000,
   },
   auth: {
     autoRefreshToken: true,
@@ -31,7 +31,9 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
       const [resource, config] = args;
       const fetchOptions = { 
         ...(config || {}), 
-        signal 
+        signal,
+        retry: 3,
+        retryDelay: 1000,
       };
       
       console.log('Supabase fetch request to:', resource);
@@ -39,11 +41,11 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
       // Thêm signal vào fetch request
       const fetchPromise = fetch(resource, fetchOptions);
       
-      // Tăng timeout lên 60s (từ 30s)
+      // Tăng timeout lên 120s
       const timeoutId = setTimeout(() => {
-        console.error('Supabase request timeout after 60 seconds');
+        console.error('Supabase request timeout after 120 seconds');
         controller.abort();
-      }, 60000);
+      }, 120000);
       
       // Xử lý và dọn dẹp
       return fetchPromise
@@ -56,8 +58,8 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
           throw error;
         })
         .finally(() => {
-        clearTimeout(timeoutId);
-      });
+          clearTimeout(timeoutId);
+        });
     },
     headers: {
       'x-client-info': 'supabase-js/2.x'
@@ -71,30 +73,63 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
 // Lưu trữ các channel đã tạo để có thể dọn dẹp sau này
 const activeChannels: Record<string, any> = {};
 
-// Hàm để tạo mới kết nối Realtime
-export function reconnectRealtime(channelName: string) {
-  try {
-    // Hủy channel cũ nếu tồn tại
-    if (activeChannels[channelName]) {
-      console.log(`Unsubscribing from existing channel: ${channelName}`);
-      supabase.removeChannel(activeChannels[channelName]);
-      delete activeChannels[channelName];
+// Hàm để tạo mới kết nối Realtime với retry
+export async function reconnectRealtime(channelName: string, maxRetries = 3) {
+  let retryCount = 0;
+  
+  while (retryCount < maxRetries) {
+    try {
+      // Hủy channel cũ nếu tồn tại
+      if (activeChannels[channelName]) {
+        console.log(`Unsubscribing from existing channel: ${channelName}`);
+        supabase.removeChannel(activeChannels[channelName]);
+        delete activeChannels[channelName];
+      }
+      
+      // Tạo channel mới với tên cụ thể + timestamp để đảm bảo độc nhất
+      const newChannelName = `${channelName}-${Date.now()}`;
+      console.log(`Creating new channel: ${newChannelName}`);
+      
+      const channel = supabase.channel(newChannelName);
+      
+      // Lưu channel mới vào đối tượng theo dõi
+      activeChannels[channelName] = channel;
+      
+      // Đợi kết nối thành công
+      await new Promise((resolve, reject) => {
+        const timeoutId = setTimeout(() => {
+          reject(new Error('Channel connection timeout'));
+        }, 10000);
+        
+        channel
+          .on('system', { event: 'connected' }, () => {
+            clearTimeout(timeoutId);
+            resolve(true);
+          })
+          .subscribe((status) => {
+            if (status === 'CHANNEL_ERROR') {
+              clearTimeout(timeoutId);
+              reject(new Error('Channel error'));
+            }
+          });
+      });
+      
+      return channel;
+    } catch (error) {
+      console.error(`Realtime connection attempt ${retryCount + 1} failed:`, error);
+      retryCount++;
+      
+      if (retryCount < maxRetries) {
+        // Đợi một chút trước khi thử lại
+        await new Promise(resolve => setTimeout(resolve, 2000));
+      } else {
+        console.error('Max retries reached for realtime connection');
+        return null;
+      }
     }
-    
-    // Tạo channel mới với tên cụ thể + timestamp để đảm bảo độc nhất
-    const newChannelName = `${channelName}-${Date.now()}`;
-    console.log(`Creating new channel: ${newChannelName}`);
-    
-    const channel = supabase.channel(newChannelName);
-    
-    // Lưu channel mới vào đối tượng theo dõi
-    activeChannels[channelName] = channel;
-    
-    return channel;
-  } catch (error) {
-    console.error('Error reconnecting realtime:', error);
-    return null;
   }
+  
+  return null;
 }
 
 // Hàm để kết nối lại nếu kênh Realtime bị mắc kẹt
@@ -117,7 +152,12 @@ export async function resetRealtimeConnection() {
     }
     
     // Ngắt kết nối để đảm bảo tạo mới hoàn toàn
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    await new Promise(resolve => setTimeout(resolve, 5000));
+    
+    // Thử kết nối lại tất cả các channel
+    for (const channelName of Object.keys(activeChannels)) {
+      await reconnectRealtime(channelName);
+    }
     
     console.log('Realtime connection reset complete');
     return true;
@@ -125,6 +165,45 @@ export async function resetRealtimeConnection() {
     console.error('Failed to reset realtime connection:', error);
     return false;
   }
+}
+
+// Hàm để theo dõi trạng thái kết nối Realtime
+export function monitorRealtimeConnection() {
+  try {
+    // Tạo một channel đặc biệt để theo dõi kết nối
+    const monitorChannel = supabase.channel('monitor-connection');
+    
+    // Lắng nghe các sự kiện hệ thống
+    monitorChannel
+      .on('system', { event: 'disconnected' }, async () => {
+        console.log('Realtime disconnected, attempting to reconnect...');
+        await resetRealtimeConnection();
+      })
+      .on('system', { event: 'error' }, async (error) => {
+        console.error('Realtime error:', error);
+        await resetRealtimeConnection();
+      })
+      .subscribe((status) => {
+        console.log('Monitor channel subscription status:', status);
+        if (status === 'CHANNEL_ERROR') {
+          console.error('Monitor channel error');
+        }
+      });
+    
+    // Lưu channel monitor vào activeChannels
+    activeChannels['monitor-connection'] = monitorChannel;
+    
+    return monitorChannel;
+  } catch (error) {
+    console.error('Failed to setup realtime monitoring:', error);
+    return null;
+  }
+}
+
+// Gọi hàm monitor khi khởi tạo
+const monitorChannel = monitorRealtimeConnection();
+if (monitorChannel) {
+  console.log('Realtime monitoring setup complete');
 }
 
 // Hàm ping đơn giản để kiểm tra kết nối
@@ -217,9 +296,9 @@ export async function checkSupabaseConnection() {
       const channel = supabase.channel('realtime-check');
       
       let timeoutId = setTimeout(() => {
-        console.error('Realtime connection timeout after 30 seconds');
+        console.error('Realtime connection timeout after 60 seconds');
         resolve(false);
-      }, 30000);
+      }, 60000);
       
       channel
         .on('system', { event: 'connected' }, () => {
@@ -229,7 +308,7 @@ export async function checkSupabaseConnection() {
           // Đóng kênh sau khi kiểm tra
           setTimeout(() => {
             supabase.removeChannel(channel);
-          }, 2000);
+          }, 5000);
           
           resolve(true);
         })

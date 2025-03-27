@@ -247,18 +247,143 @@ const AdminPageWrapper = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-export default function AdminLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+// Tách AdminLayout thành 2 component
+const AdminLayoutContent = ({ children }: { children: React.ReactNode }) => {
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
+  const [connectionError, setConnectionError] = useState(false);
+  const [realtimeStatus, setRealtimeStatus] = useState<string>('UNKNOWN');
+  const { signOut, profile } = useAuth();
+  const router = useRouter();
   const pathname = usePathname();
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  
+
+  // Thêm useEffect để quản lý kết nối Realtime
+  useEffect(() => {
+    let monitorChannel: any = null;
+    let reconnectTimeout: NodeJS.Timeout;
+
+    const setupRealtimeMonitoring = async () => {
+      try {
+        // Kiểm tra kết nối Supabase
+        const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) {
+          console.error('Supabase connection failed:', sessionError);
+          setConnectionError(true);
+          return;
+        }
+
+        // Tạo channel monitor
+        monitorChannel = supabase.channel('admin-monitor');
+        
+        // Lắng nghe các sự kiện hệ thống
+        monitorChannel
+          .on('system', { event: 'connected' }, () => {
+            console.log('Admin monitor connected');
+            setRealtimeStatus('CONNECTED');
+            setConnectionError(false);
+          })
+          .on('system', { event: 'disconnected' }, () => {
+            console.log('Admin monitor disconnected');
+            setRealtimeStatus('DISCONNECTED');
+            setConnectionError(true);
+            
+            // Thử kết nối lại sau 5 giây
+            reconnectTimeout = setTimeout(() => {
+              console.log('Attempting to reconnect...');
+              setupRealtimeMonitoring();
+            }, 5000);
+          })
+          .subscribe((status: string) => {
+            console.log('Admin monitor subscription status:', status);
+            setRealtimeStatus(status);
+            if (status === 'CHANNEL_ERROR') {
+              setConnectionError(true);
+            }
+          });
+      } catch (error) {
+        console.error('Failed to setup realtime monitoring:', error);
+        setConnectionError(true);
+      }
+    };
+
+    // Thiết lập monitoring khi component mount
+    setupRealtimeMonitoring();
+
+    // Cleanup khi component unmount
+    return () => {
+      if (monitorChannel) {
+        console.log('Cleaning up admin monitor channel');
+        supabase.removeChannel(monitorChannel);
+      }
+      if (reconnectTimeout) {
+        clearTimeout(reconnectTimeout);
+      }
+    };
+  }, []);
+
   const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
+    setIsSidebarOpen(!isSidebarOpen);
   };
-  
+
+  return (
+    <div className="min-h-screen bg-gray-100 font-sans">
+      {/* Connection Status Banner */}
+      {connectionError && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-red-900 text-white py-2 px-4 text-center">
+          ❌ Supabase connection failed - realtime updates may not work
+        </div>
+      )}
+      
+      {/* Top Navigation Spacer */}
+      <div className={`h-16 ${connectionError ? 'mt-8' : ''}`}></div>
+
+      <AdminNavigation isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
+      
+      <div className={`transition-all duration-300 ${isSidebarOpen ? "md:ml-72" : "md:ml-20"}`}>
+        <div className="p-4 md:py-8 md:px-8">
+          <div className="mb-6 flex items-center">
+            <button onClick={toggleSidebar} className="md:hidden mr-4 p-2 rounded-md hover:bg-gray-200">
+              <Menu className="w-6 h-6" />
+            </button>
+            
+            <div className="flex flex-col">
+              <h1 className="text-2xl font-bold text-gray-800">
+                {pathname === '/admin' ? 'Dashboard' : ''}
+                {pathname.includes('/admin/heroes') && 'Quản lý nhân vật'}
+                {pathname.includes('/admin/news') && 'Quản lý tin tức'}
+                {pathname.includes('/admin/media') && 'Thư viện media'}
+                {pathname.includes('/admin/game-info') && 'Thông tin game'}
+                {pathname.includes('/admin/faqs') && 'Hỗ trợ & FAQ'}
+                {pathname.includes('/admin/users') && 'Quản lý người dùng'}
+                {pathname.includes('/admin/analytics') && 'Thống kê'}
+                
+                {pathname.includes('/create') && ' - Tạo mới'}
+                {pathname.includes('/edit') && ' - Chỉnh sửa'}
+              </h1>
+              <div className="text-sm text-gray-500 mt-1">
+                {pathname === '/admin' && 'Tổng quan hệ thống quản trị'}
+                {pathname.includes('/admin/heroes') && 'Quản lý thông tin nhân vật trong game'}
+                {pathname.includes('/admin/news') && 'Đăng và quản lý tin tức mới nhất'}
+                {pathname.includes('/admin/media') && 'Upload và quản lý hình ảnh, video'}
+                {pathname.includes('/admin/game-info') && 'Cập nhật thông tin về game'}
+                {pathname.includes('/admin/faqs') && 'Quản lý câu hỏi thường gặp'}
+                {pathname.includes('/admin/users') && 'Quản lý tài khoản và phân quyền'}
+                {pathname.includes('/admin/analytics') && 'Theo dõi lượt truy cập và tương tác'}
+              </div>
+            </div>
+          </div>
+          
+          <div className="bg-white rounded-lg shadow-sm p-6">
+            {children}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// Component chính AdminLayout
+const AdminLayout = ({ children }: { children: React.ReactNode }) => {
   return (
     <div className={`${inter.variable}`}>
       <style jsx global>{`
@@ -272,56 +397,29 @@ export default function AdminLayout({
       <AdminPageWrapper>
         <AuthProvider>
           <AuthCheck>
-            {pathname === '/admin/login' ? (
-              <div className="min-h-screen font-sans">{children}</div>
-            ) : (
-              <div className="min-h-screen bg-gray-100 font-sans">
-                <AdminNavigation isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-                
-                <div className={`transition-all duration-300 ${sidebarOpen ? "md:ml-72" : "md:ml-20"}`}>
-                  <div className="p-4 md:py-8 md:px-8">
-                    <div className="mb-6 flex items-center">
-                      <button onClick={toggleSidebar} className="md:hidden mr-4 p-2 rounded-md hover:bg-gray-200">
-                        <Menu className="w-6 h-6" />
-                      </button>
-                      
-                      <div className="flex flex-col">
-                        <h1 className="text-2xl font-bold text-gray-800">
-                          {pathname === '/admin' ? 'Dashboard' : ''}
-                          {pathname.includes('/admin/heroes') && 'Quản lý nhân vật'}
-                          {pathname.includes('/admin/news') && 'Quản lý tin tức'}
-                          {pathname.includes('/admin/media') && 'Thư viện media'}
-                          {pathname.includes('/admin/game-info') && 'Thông tin game'}
-                          {pathname.includes('/admin/faqs') && 'Hỗ trợ & FAQ'}
-                          {pathname.includes('/admin/users') && 'Quản lý người dùng'}
-                          {pathname.includes('/admin/analytics') && 'Thống kê'}
-                          
-                          {pathname.includes('/create') && ' - Tạo mới'}
-                          {pathname.includes('/edit') && ' - Chỉnh sửa'}
-                        </h1>
-                        <div className="text-sm text-gray-500 mt-1">
-                          {pathname === '/admin' && 'Tổng quan hệ thống quản trị'}
-                          {pathname.includes('/admin/heroes') && 'Quản lý thông tin nhân vật trong game'}
-                          {pathname.includes('/admin/news') && 'Đăng và quản lý tin tức mới nhất'}
-                          {pathname.includes('/admin/media') && 'Upload và quản lý hình ảnh, video'}
-                          {pathname.includes('/admin/game-info') && 'Cập nhật thông tin về game'}
-                          {pathname.includes('/admin/faqs') && 'Quản lý câu hỏi thường gặp'}
-                          {pathname.includes('/admin/users') && 'Quản lý tài khoản và phân quyền'}
-                          {pathname.includes('/admin/analytics') && 'Theo dõi lượt truy cập và tương tác'}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="bg-white rounded-lg shadow-sm p-6">
-                      {children}
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+            {children}
           </AuthCheck>
         </AuthProvider>
       </AdminPageWrapper>
     </div>
+  );
+};
+
+// Component để render nội dung admin
+const AdminContent = ({ children }: { children: React.ReactNode }) => {
+  const pathname = usePathname();
+  
+  return pathname === '/admin/login' ? (
+    <div className="min-h-screen font-sans">{children}</div>
+  ) : (
+    <AdminLayoutContent>{children}</AdminLayoutContent>
+  );
+};
+
+export default function AdminLayoutWrapper({ children }: { children: React.ReactNode }) {
+  return (
+    <AdminLayout>
+      <AdminContent>{children}</AdminContent>
+    </AdminLayout>
   );
 }
