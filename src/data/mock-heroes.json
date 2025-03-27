@@ -1,0 +1,62 @@
+[
+  {
+    "id": "jett",
+    "name": "Jett",
+    "role": "Duelist",
+    "difficulty": 2,
+    "bio": "Representing her home country of South Korea, Jett's agile and evasive fighting style lets her take risks no one else can. She runs circles around every skirmish, cutting enemies up before they even know what hit them.",
+    "portrait_url": "/images/agents/jett/jett-full.png",
+    "banner_url": "/images/valorant-hero-bg.jpg",
+    "video_url": ""
+  },
+  {
+    "id": "sage",
+    "name": "Sage",
+    "role": "Sentinel",
+    "difficulty": 1,
+    "bio": "The stronghold of China, Sage creates safety for herself and her team wherever she goes. Able to revive fallen friends and stave off aggressive pushes, she provides a calm center to a hellish fight.",
+    "portrait_url": "/images/agents/sage/sage-full.png",
+    "banner_url": "/images/valorant-hero-bg.jpg",
+    "video_url": ""
+  },
+  {
+    "id": "phoenix",
+    "name": "Phoenix",
+    "role": "Duelist",
+    "difficulty": 1,
+    "bio": "Hailing from the U.K., Phoenix's star power shines through in his fighting style, igniting the battlefield with flash and flare. Whether he's got backup or not, he'll rush into a fight on his own terms.",
+    "portrait_url": "/images/valorant-hero-bg.jpg",
+    "banner_url": "/images/valorant-hero-bg.jpg",
+    "video_url": ""
+  },
+  {
+    "id": "omen",
+    "name": "Omen",
+    "role": "Controller",
+    "difficulty": 2,
+    "bio": "A phantom of a memory, Omen hunts in the shadows. He renders enemies blind, teleports across the field, then lets paranoia take hold as his foe scrambles to learn where he might strike next.",
+    "portrait_url": "/images/valorant-hero-bg.jpg",
+    "banner_url": "/images/valorant-hero-bg.jpg",
+    "video_url": ""
+  },
+  {
+    "id": "brimstone",
+    "name": "Brimstone",
+    "role": "Controller",
+    "difficulty": 1,
+    "bio": "Joining from the USA, Brimstone's orbital arsenal ensures his squad always has the advantage. His ability to deliver utility precisely and from a distance makes him an unmatched tactician on the battlefield.",
+    "portrait_url": "/images/valorant-hero-bg.jpg",
+    "banner_url": "/images/valorant-hero-bg.jpg",
+    "video_url": ""
+  },
+  {
+    "id": "viper",
+    "name": "Viper",
+    "role": "Controller",
+    "difficulty": 3,
+    "bio": "The American chemist, Viper deploys an array of poisonous chemical devices to control the battlefield and cripple the enemy's vision. If the toxins don't kill her prey, her mind games surely will.",
+    "portrait_url": "/images/valorant-hero-bg.jpg",
+    "banner_url": "/images/valorant-hero-bg.jpg",
+    "video_url": ""
+  }
+] 

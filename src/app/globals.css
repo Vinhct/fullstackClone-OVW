@@ -1,0 +1,245 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Font imports */
+@font-face {
+  font-family: 'Tungsten';
+  src: url('/fonts/Tungsten-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'DIN Next';
+  src: url('/fonts/DINNextW1G.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Mark Pro';
+  src: url('/fonts/MarkPro-Bold.woff2') format('woff2');
+  font-weight: 700;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --background: 20 16% 96%;
+  --foreground: 240 10% 3.9%;
+  --card: 0 0% 100%;
+  --card-foreground: 240 10% 3.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 240 10% 3.9%;
+  --primary: 355 75% 53%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 240 5.9% 10%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 4.8% 95.9%;
+  --muted-foreground: 240 3.8% 46.1%;
+  --accent: 240 4.8% 95.9%;
+  --accent-foreground: 240 5.9% 10%;
+  --destructive: 0 84.2% 60.2%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 5.9% 90%;
+  --input: 240 5.9% 90%;
+  --ring: 240 10% 3.9%;
+  --radius: 0.5rem;
+
+  /* Valorant custom colors */
+  --valorant-red: 355 75% 53%;
+  --valorant-dark: 240 10% 3.9%;
+  --valorant-light: 20 16% 96%;
+  --valorant-blue: 200 100% 40%;
+  --valorant-green: 120 100% 30%;
+  --valorant-purple: 280 100% 50%;
+
+  /* Overwatch color scheme */
+  --primary-blue: #218ffe;
+  --secondary-blue: #4fc1e9;
+  --dark-blue: #1a3c5a;
+  --light-blue: #7fdbff;
+  --accent-orange: #ff9e2c;
+  --background-dark: #0d1b2a;
+  --background-light: #f0f8ff;
+  --text-light: #ffffff;
+  --text-dark: #2c3e50;
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+  --card: 240 10% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 240 10% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 355 75% 53%;
+  --primary-foreground: 0 0% 98%;
+  --secondary: 240 3.7% 15.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 240 3.7% 15.9%;
+  --muted-foreground: 240 5% 64.9%;
+  --accent: 240 3.7% 15.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 240 3.7% 15.9%;
+  --input: 240 3.7% 15.9%;
+  --ring: 240 4.9% 83.9%;
+}
+
+* {
+  border-color: hsl(var(--border));
+}
+
+body {
+  background-color: var(--background-dark);
+  color: var(--text-light);
+}
+
+/* Custom Styles */
+.valorant-container {
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+  max-width: 80rem;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+@media (min-width: 768px) {
+  .valorant-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+.valorant-heading {
+  font-family: 'Tungsten', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 2.25rem;
+  line-height: 2.5rem;
+  font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .valorant-heading {
+    font-size: 3.75rem;
+    line-height: 1;
+  }
+}
+
+.valorant-subheading {
+  font-family: 'DIN Next', sans-serif;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 1.25rem;
+  line-height: 1.75rem;
+  font-weight: 700;
+}
+
+@media (min-width: 768px) {
+  .valorant-subheading {
+    font-size: 1.5rem;
+    line-height: 2rem;
+  }
+}
+
+.overwatch-btn-primary {
+  background-color: var(--primary-blue);
+  color: white;
+  text-transform: uppercase;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  padding: 0.75rem 2rem;
+  border-radius: 0.375rem;
+  font-weight: 700;
+  transition: background-color 0.3s ease;
+}
+
+.overwatch-btn-primary:hover {
+  background-color: rgba(33, 143, 254, 0.9);
+}
+
+.overwatch-btn-secondary {
+  border: 2px solid var(--primary-blue);
+  color: blue;
+  text-transform: uppercase;
+  font-size: 14px;
+  letter-spacing: 0.1em;
+  padding: 0.75rem 2rem;
+  border-radius: 0.375rem;
+  font-weight: 700;
+  transition: background-color 0.3s ease;
+}
+
+.overwatch-btn-secondary:hover {
+  background-color: rgba(33, 143, 254, 0.2);
+}
+
+.overwatch-section {
+  padding-top: 5rem;
+  padding-bottom: 5rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.overwatch-heading {
+  font-weight: 700;
+  font-size: 2.25rem;
+  text-transform: uppercase;
+  letter-spacing: -0.025em;
+  line-height: 1;
+  margin-bottom: 2rem;
+  color: var(--primary-blue);
+}
+
+@media (min-width: 768px) {
+  .overwatch-heading {
+    font-size: 3rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .overwatch-heading {
+    font-size: 3.75rem;
+  }
+}
+
+.overwatch-subheading {
+  font-weight: 700;
+  text-transform: uppercase;
+  font-size: 1.125rem;
+  margin-bottom: 1.5rem;
+  color: var(--secondary-blue);
+}
+
+/* Font utilities */
+.font-din {
+  font-family: 'DIN Next', sans-serif;
+}
+
+.font-tungsten {
+  font-family: 'Tungsten', sans-serif;
+}
+
+.font-markpro {
+  font-family: 'Mark Pro', sans-serif;
+}
+
+/* Clip path for Valorant logo */
+.clip-path-v {
+  clip-path: polygon(0% 100%, 50% 0%, 100% 100%);
+}
+
+/* Background grid pattern */
+.bg-grid-pattern {
+  background-image: 
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
