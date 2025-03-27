@@ -56,8 +56,8 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
           throw error;
         })
         .finally(() => {
-          clearTimeout(timeoutId);
-        });
+        clearTimeout(timeoutId);
+      });
     },
     headers: {
       'x-client-info': 'supabase-js/2.x'
@@ -294,8 +294,8 @@ export async function createSampleHero() {
     // Thử thêm hero bằng SDK
     try {
       // Thêm hero vào bảng heroes
-      const { data, error } = await supabase
-        .from('heroes')
+    const { data, error } = await supabase
+      .from('heroes')
         .insert([heroData])
         .select('*');
       
